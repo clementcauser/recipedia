@@ -1,98 +1,44 @@
-// ─────────────────────────────────────────────────────────
-// Middleware Next.js pour protéger les routes avec vérification de session
-// S'exécute avant chaque requête pour vérifier l'authentification
-// ─────────────────────────────────────────────────────────
-
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { verifySession } from "./features/auth/session";
-
-// Routes publiques accessibles sans authentification
-const PUBLIC_ROUTES = [
-  "/",
-  "/login",
-  "/signup",
-  "/forgot-password",
-  "/reset-password",
-  "/verify-email",
-];
-
-// Routes réservées aux admins
-const ADMIN_ROUTES = ["/admin"];
-
-// Routes qui nécessitent un email vérifié
-const VERIFIED_EMAIL_ROUTES = ["/dashboard", "/projects"];
+import { betterFetch } from "@better-fetch/fetch";
+import type { Session } from "better-auth/types";
+import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+	const { data: session } = await betterFetch<Session>(
+		"/api/auth/get-session",
+		{
+			baseURL: process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin,
+			headers: {
+				cookie: request.headers.get("cookie") || "", 
+			},
+		},
+	);
 
-  // Ignorer les routes statiques et API
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.includes(".")
-  ) {
-    return NextResponse.next();
-  }
+  const isAuthRoute = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/register");
+  const isProtectedRoute = request.nextUrl.pathname.startsWith("/settings");
 
-  // Récupérer le token de session
-  const sessionToken = request.cookies.get("session")?.value;
-
-  // Vérifier la session
-  const session = sessionToken ? await verifySession(sessionToken) : null;
-  const isAuthenticated = session !== null;
-
-  // ── Route publique ────────────────────────────────────
-  const isPublicRoute = PUBLIC_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`),
-  );
-
-  if (isPublicRoute) {
-    // Si connecté et tente d'accéder à login/signup, rediriger vers dashboard
-    if (isAuthenticated && ["/login", "/signup"].includes(pathname)) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+  // Redirect authenticated users away from login/register pages
+	if (isAuthRoute) {
+    if (session) {
+      return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();
   }
 
-  // ── Route protégée : vérifier authentification ────────
-  if (!isAuthenticated) {
-    // Rediriger vers login avec callbackUrl
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
+  // Redirect unauthenticated users away from protected routes
+  if (isProtectedRoute) {
+    if (!session) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    return NextResponse.next();
   }
 
-  // ── Vérifier si l'email est requis ───────────────────
-  const requiresVerifiedEmail = VERIFIED_EMAIL_ROUTES.some((route) =>
-    pathname.startsWith(route),
-  );
-
-  if (requiresVerifiedEmail && !session.user.emailVerified) {
-    return NextResponse.redirect(new URL("/verify-email", request.url));
-  }
-
-  // ── Route admin : vérifier le rôle ───────────────────
-  const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
-
-  if (isAdminRoute && session.user.role !== "admin") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  // ── Tout est OK, continuer ───────────────────────────
-  return NextResponse.next();
+	return NextResponse.next();
 }
 
-// Configuration : sur quelles routes le middleware s'applique
 export const config = {
-  matcher: [
-    /*
-     * Match toutes les routes sauf :
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+	matcher: [
+    "/settings/:path*", 
+    "/login", 
+    "/register",
   ],
 };
