@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,15 +7,21 @@ datasource db {
 }
 
 model User {
-  id               String      @id
-  name             String
-  email            String
-  emailVerified    Boolean
-  image            String?
-  createdAt        DateTime
-  updatedAt        DateTime
-  sessions         Session[]
-  accounts         Account[]
+  id            String     @id
+  firstName     String
+  lastName      String
+  displayName   String?
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
+  recipes       Recipe[]
+  favorites     Favorite[]
+  reviews       Review[]
+  comments      Comment[]
 
   @@unique([email])
   @@map("user")
@@ -34,8 +39,8 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
-  @@map("session")
   @@index([userId])
+  @@map("session")
 }
 
 model Account {
@@ -54,8 +59,8 @@ model Account {
   createdAt             DateTime
   updatedAt             DateTime
 
-  @@map("account")
   @@index([userId])
+  @@map("account")
 }
 
 model Verification {
@@ -66,7 +71,159 @@ model Verification {
   createdAt  DateTime?
   updatedAt  DateTime?
 
-  @@map("verification")
   @@index([identifier])
+  @@map("verification")
 }
 
+model Recipe {
+  id              String      @id @default(cuid())
+  title           String
+  slug            String      @unique
+  description     String?
+  imageUrl        String?
+  prepTimeMinutes Int?
+  cookTimeMinutes Int?
+  servings        Int?
+  difficulty      Difficulty?
+  isPublic        Boolean     @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  ingredients RecipeIngredient[]
+  steps       RecipeStep[]
+  categories  RecipeCategory[]
+  favorites   Favorite[]
+  reviews     Review[]
+  comments    Comment[]
+
+  @@index([userId])
+  @@index([slug])
+  @@map("recipe")
+}
+
+model Ingredient {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  recipes RecipeIngredient[]
+
+  @@map("ingredient")
+}
+
+model RecipeIngredient {
+  id String @id @default(cuid())
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+
+  quantity Decimal?
+  unit     String?
+  note     String?
+  position Int?
+
+  @@index([recipeId])
+  @@index([ingredientId])
+  @@map("recipe_ingredient")
+}
+
+model RecipeStep {
+  id       String @id @default(cuid())
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  stepNumber  Int
+  instruction String
+  imageUrl    String?
+
+  @@unique([recipeId, stepNumber])
+  @@index([recipeId])
+  @@map("recipe_step")
+}
+
+model Category {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+
+  recipes RecipeCategory[]
+
+  @@map("category")
+}
+
+model RecipeCategory {
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([recipeId, categoryId])
+  @@map("recipe_category")
+}
+
+model Favorite {
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([userId, recipeId])
+  @@map("favorite")
+}
+
+model Review {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, recipeId])
+  @@index([recipeId])
+  @@map("review")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  parentId String?
+  parent   Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentThread")
+
+  @@index([recipeId])
+  @@index([userId])
+  @@index([parentId])
+  @@map("comment")
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}

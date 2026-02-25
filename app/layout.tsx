@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Header } from "@/components/layout/header";
+import { Sidebar } from "@/components/layout/sidebar";
+import { BottomNavbar } from "@/components/layout/bottom-navbar";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { authClient } from "@/lib/auth-client";
@@ -32,12 +34,18 @@ export default async function RootLayout({
   });
 
   return (
-    <html lang="fr">
+    <html lang="fr" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}
       >
-        <Header />
-        <main className="flex-1">{children}</main>
+        <div className="flex min-h-screen">
+          <Sidebar />
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* <Header /> */}
+            <main className="flex-1 pb-16 md:pb-0">{children}</main>
+          </div>
+        </div>
+        <BottomNavbar />
         <Toaster richColors position="top-right" />
       </body>
     </html>

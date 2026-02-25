@@ -19,7 +19,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export function RegisterForm() {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPending, setIsPending] = useState(false);
@@ -33,7 +35,9 @@ export function RegisterForm() {
       const { data, error } = await authClient.signUp.email({
         email,
         password,
-        name,
+        firstName,
+        lastName,
+        name: displayName || `${firstName} ${lastName}`,
         callbackURL: "/verify-email",
       });
 
@@ -61,15 +65,38 @@ export function RegisterForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">Prénom</Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="John"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Nom</Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="Doe"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+              />
+            </div>
+          </div>
           <div className="space-y-2">
-            <Label htmlFor="name">Nom complet</Label>
+            <Label htmlFor="displayName">Nom d'affichage (optionnel)</Label>
             <Input
-              id="name"
+              id="displayName"
               type="text"
-              placeholder="John Doe"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
+              placeholder="John D."
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
             />
           </div>
           <div className="space-y-2">

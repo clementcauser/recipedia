@@ -1,16 +1,33 @@
-import { betterAuth } from "better-auth"
-import { prismaAdapter } from "@better-auth/prisma-adapter"
-import { Resend } from "resend"
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "@better-auth/prisma-adapter";
+import { Resend } from "resend";
+import { db } from "./db";
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-import { db } from "./db"
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 export const auth = betterAuth({
   appName: "Recipedia",
-  baseURL:process.env.BETTER_AUTH_BASE_URL,
+  baseURL: process.env.BETTER_AUTH_BASE_URL,
   database: prismaAdapter(db, {
     provider: "postgresql",
   }),
+  user: {
+    fields: {
+      name: "displayName",
+    },
+    additionalFields: {
+      firstName: {
+        type: "string",
+        required: true,
+      },
+      lastName: {
+        type: "string",
+        required: true,
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
@@ -23,9 +40,11 @@ export const auth = betterAuth({
           text: `Cliquez ici pour réinitialiser votre mot de passe : ${url}`,
         });
       } else {
-        console.log(`\n\n[MOCK EMAIL SERVER]\nEnvoi de l'e-mail de réinitialisation à: ${user.email}\nLien: ${url}\n\n`)
+        console.log(
+          `\n\n[MOCK EMAIL SERVER]\nEnvoi de l'e-mail de réinitialisation à: ${user.email}\nLien: ${url}\n\n`,
+        );
       }
-    }
+    },
   },
   emailVerification: {
     sendOnSignUp: true,
@@ -39,10 +58,11 @@ export const auth = betterAuth({
           text: `Cliquez ici pour vérifier votre compte : ${url}`,
         });
       } else {
-        console.log(`\n\n[MOCK EMAIL SERVER]\nEnvoi de l'e-mail de vérification à: ${user.email}\nLien de vérification: ${url}\n\n`)
+        console.log(
+          `\n\n[MOCK EMAIL SERVER]\nEnvoi de l'e-mail de vérification à: ${user.email}\nLien de vérification: ${url}\n\n`,
+        );
       }
     },
   },
-  plugins: [
-  ]
-})
+  plugins: [],
+});
