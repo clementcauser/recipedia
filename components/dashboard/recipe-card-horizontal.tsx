@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Clock, Flame, Heart } from "lucide-react";
+import { Clock, Flame, Heart, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,8 @@ interface RecipeCardHorizontalProps {
   time?: string;
   calories?: string;
   isLiked?: boolean;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export function RecipeCardHorizontal({
@@ -22,6 +24,8 @@ export function RecipeCardHorizontal({
   time,
   calories,
   isLiked,
+  rating,
+  reviewCount,
 }: RecipeCardHorizontalProps) {
   return (
     <Link href={`/recipes/${id}`} className="group block">
@@ -66,6 +70,17 @@ export function RecipeCardHorizontal({
               <span className="flex items-center gap-1">
                 <Flame className="h-3 w-3" />
                 {calories}
+              </span>
+            )}
+            {rating !== undefined && rating > 0 && (
+              <span className="flex items-center gap-1 text-yellow-500">
+                <Star className="h-3 w-3 fill-current" />
+                {rating.toFixed(1)}
+                {reviewCount !== undefined && (
+                  <span className="text-muted-foreground ml-0.5">
+                    ({reviewCount})
+                  </span>
+                )}
               </span>
             )}
           </div>

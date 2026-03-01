@@ -6,8 +6,9 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { QuickImportCard } from "@/components/dashboard/quick-import-card";
 import { RecipeCardHorizontal } from "@/components/dashboard/recipe-card-horizontal";
 import { CommunityPickCard } from "@/components/dashboard/community-pick-card";
-import { Soup, BookOpen, TrendingUp, UserCircle } from "lucide-react";
+import { Soup, BookOpen, TrendingUp, UserCircle, Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getUserAverageRating } from "./actions/recipe.actions";
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -44,6 +45,7 @@ export default async function Home() {
 
   const recipes = await getRecipes();
   const recentRecipes = recipes.slice(0, 3);
+  const ratingStat = await getUserAverageRating();
 
   // Greeting based on time
   const hour = new Date().getHours();
@@ -63,14 +65,13 @@ export default async function Home() {
               Chef {session.user.firstName}
             </h1>
           </div>
-          {/* <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-white dark:border-zinc-800 shadow-sm"> */}
+
           <Avatar size="lg">
             <AvatarImage src={session?.user?.image ?? undefined} />
             <AvatarFallback>
               <UserCircle className="h-full w-full text-zinc-300 dark:text-zinc-700" />
             </AvatarFallback>
           </Avatar>
-          {/* </div> */}
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -80,7 +81,7 @@ export default async function Home() {
             </section>
 
             {/* Stats (Inline for Mobile, Grid for Desktop) */}
-            <section className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 label="Recettes cuisinées"
                 value={recipes.length}
@@ -101,6 +102,19 @@ export default async function Home() {
                 icon={TrendingUp}
                 iconColor="text-purple-500"
                 bgColor="bg-purple-50 dark:bg-purple-950/20"
+              />
+              <StatCard
+                label="Note moyenne de vos recettes"
+                value={
+                  ratingStat.status === "hasNoPublicRecipes"
+                    ? "Vous n'avez pas publié de recette"
+                    : ratingStat.status === "hasNoReviews"
+                      ? "Vos recettes n'ont pas reçu de note pour le moment"
+                      : ratingStat.averageRating?.toFixed(1) || "0.0"
+                }
+                icon={Star}
+                iconColor="text-yellow-500"
+                bgColor="bg-yellow-50 dark:bg-yellow-950/20"
               />
             </section>
 
@@ -133,6 +147,8 @@ export default async function Home() {
                         calories="320 kcal"
                         image={recipe.imageUrl || undefined}
                         isLiked={recipe.favorites.length > 0}
+                        rating={(recipe as any).averageRating}
+                        reviewCount={(recipe as any).reviewCount}
                       />
                     ))
                 ) : (

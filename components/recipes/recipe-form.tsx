@@ -261,7 +261,13 @@ export function RecipeForm({ initialData }: RecipeFormProps) {
                 <FormItem>
                   <FormLabel>Portions</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} />
+                    <Input
+                      type="number"
+                      {...field}
+                      onChange={(val) =>
+                        field.onChange(parseInt(val.target.value))
+                      }
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

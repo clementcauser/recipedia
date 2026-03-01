@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-import { Plus, Utensils, Clock, ChefHat } from "lucide-react";
+import { Plus, Utensils, Clock, ChefHat, Star } from "lucide-react";
 import { DeleteRecipeButton } from "@/components/recipes/delete-recipe-button";
 import { Badge } from "@/components/ui/badge";
 
@@ -97,6 +97,17 @@ export default async function RecipesPage() {
                     <Utensils className="h-3 w-3" />
                     <span>{recipe.ingredients.length} ingr.</span>
                   </div>
+                  {(recipe as any).reviewCount > 0 && (
+                    <div className="flex items-center gap-1 text-yellow-500">
+                      <Star className="h-3 w-3 fill-current" />
+                      <span className="font-medium">
+                        {(recipe as any).averageRating.toFixed(1)}
+                      </span>
+                      <span className="text-muted-foreground">
+                        ({(recipe as any).reviewCount})
+                      </span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between border-t pt-4 bg-muted/5">

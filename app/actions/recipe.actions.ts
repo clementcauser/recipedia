@@ -185,7 +185,7 @@ export async function getRecipes() {
     return [];
   }
 
-  return await db.recipe.findMany({
+  const recipes = await db.recipe.findMany({
     where: {
       userId: session.user.id,
     },
@@ -206,11 +206,32 @@ export async function getRecipes() {
           userId: session.user.id,
         },
       },
+      _count: {
+        select: { reviews: true, comments: true },
+      },
     },
     orderBy: {
       createdAt: "desc",
     },
   });
+
+  const recipesWithDetails = await Promise.all(
+    recipes.map(async (recipe) => {
+      const aggregate = await db.review.aggregate({
+        where: { recipeId: recipe.id },
+        _avg: { rating: true },
+      });
+
+      return {
+        ...recipe,
+        averageRating: aggregate._avg.rating || 0,
+        reviewCount: recipe._count.reviews,
+        commentCount: recipe._count.comments,
+      };
+    }),
+  );
+
+  return recipesWithDetails;
 }
 
 export async function getRecipeById(id: string) {
@@ -219,7 +240,7 @@ export async function getRecipeById(id: string) {
     throw new Error("Vous devez être connecté pour voir une recette");
   }
 
-  return await db.recipe.findFirst({
+  const recipe = await db.recipe.findFirst({
     where: {
       id,
       userId: session.user.id,
@@ -243,6 +264,192 @@ export async function getRecipeById(id: string) {
           category: true,
         },
       },
+      _count: {
+        select: { reviews: true, comments: true },
+      },
     },
   });
+
+  if (!recipe) return null;
+
+  const userReview = session
+    ? await db.review.findFirst({
+        where: {
+          recipeId: id,
+          userId: session.user.id,
+        },
+      })
+    : null;
+
+  const aggregate = await db.review.aggregate({
+    where: { recipeId: id },
+    _avg: { rating: true },
+  });
+
+  return {
+    ...recipe,
+    ingredients: recipe.ingredients.map((ing) => ({
+      ...ing,
+      quantity: ing.quantity?.toString() ?? null,
+    })),
+    userReview,
+    averageRating: aggregate._avg.rating || 0,
+    reviewCount: recipe._count.reviews,
+    commentCount: recipe._count.comments,
+  };
+}
+
+export async function upsertReview(
+  recipeId: string,
+  data: { rating: number; comment?: string },
+) {
+  const session = await getSession();
+  if (!session) {
+    throw new Error("Vous devez être connecté pour laisser un avis");
+  }
+
+  const review = await db.review.upsert({
+    where: {
+      userId_recipeId: {
+        userId: session.user.id,
+        recipeId,
+      },
+    },
+    update: {
+      rating: data.rating,
+      comment: data.comment,
+    },
+    create: {
+      userId: session.user.id,
+      recipeId,
+      rating: data.rating,
+      comment: data.comment,
+    },
+  });
+
+  revalidatePath(`/recipes/${recipeId}`);
+  return review;
+}
+
+export async function getUserAverageRating() {
+  const session = await getSession();
+  if (!session) return { status: "unauthorized" as const };
+
+  const publicRecipesCount = await db.recipe.count({
+    where: {
+      userId: session.user.id,
+      isPublic: true,
+    },
+  });
+
+  if (publicRecipesCount === 0) {
+    return { status: "hasNoPublicRecipes" as const };
+  }
+
+  const aggregate = await db.review.aggregate({
+    where: {
+      recipe: {
+        userId: session.user.id,
+        isPublic: true,
+      },
+    },
+    _avg: { rating: true },
+    _count: { _all: true },
+  });
+
+  if (aggregate._count._all === 0) {
+    return { status: "hasNoReviews" as const };
+  }
+
+  return {
+    status: "success" as const,
+    averageRating: aggregate._avg.rating || 0,
+    reviewCount: aggregate._count._all,
+  };
+}
+
+export async function getComments(recipeId: string) {
+  const session = await getSession();
+  if (!session) {
+    throw new Error("Vous devez être connecté pour voir les commentaires");
+  }
+
+  const comments = await db.comment.findMany({
+    where: {
+      recipeId,
+      parentId: null,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          displayName: true,
+          image: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
+      replies: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              displayName: true,
+              image: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          replies: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  displayName: true,
+                  image: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const totalCount = await db.comment.count({
+    where: { recipeId },
+  });
+
+  return { comments, totalCount };
+}
+
+export async function createComment(data: {
+  recipeId: string;
+  content: string;
+  parentId?: string;
+}) {
+  const session = await getSession();
+  if (!session) {
+    throw new Error("Vous devez être connecté pour commenter");
+  }
+
+  const comment = await db.comment.create({
+    data: {
+      content: data.content,
+      recipeId: data.recipeId,
+      userId: session.user.id,
+      parentId: data.parentId,
+    },
+  });
+
+  revalidatePath(`/recipes/${data.recipeId}`);
+  return comment;
 }

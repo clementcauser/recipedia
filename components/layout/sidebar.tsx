@@ -39,7 +39,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col border-r bg-card min-h-screen sticky top-0 transition-all duration-300 ease-in-out z-50",
+        "hidden md:flex flex-col border-r bg-card h-screen sticky top-0 transition-all duration-300 ease-in-out z-50",
         isCollapsed ? "w-20" : "w-64",
       )}
     >
@@ -69,7 +69,7 @@ export function Sidebar() {
       </div>
 
       {/* Main Navigation */}
-      <nav className="flex-1 px-4 space-y-2 mt-4">
+      <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
         {mainNavItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -158,7 +158,7 @@ export function Sidebar() {
       {!isCollapsed && (
         <div className="p-4 border-t opacity-50">
           <p className="text-xs text-center text-muted-foreground">
-            © 2024 Recipedia
+            © 2026 Recipedia
           </p>
         </div>
       )}

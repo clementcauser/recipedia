@@ -24,7 +24,18 @@ export function StatCard({
           <Icon className={cn("h-5 w-5", iconColor)} />
         </div>
         <div>
-          <div className="text-2xl font-bold">{value}</div>
+          <div
+            className={cn(
+              "font-bold leading-tight",
+              typeof value === "string" && value.length > 20
+                ? "text-sm"
+                : value.toString().length > 10
+                  ? "text-lg"
+                  : "text-2xl",
+            )}
+          >
+            {value}
+          </div>
           <div className="text-sm text-muted-foreground font-medium">
             {label}
           </div>
