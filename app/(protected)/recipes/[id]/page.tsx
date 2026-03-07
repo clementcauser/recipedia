@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import { RecipeContent } from "@/components/recipes/recipe-content";
 
 interface RecipePageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function RecipePage({ params }: RecipePageProps) {

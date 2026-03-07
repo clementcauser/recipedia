@@ -3,13 +3,14 @@ import { RecipeForm } from "@/components/recipes/recipe-form";
 import { notFound } from "next/navigation";
 
 interface EditRecipePageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function EditRecipePage({ params }: EditRecipePageProps) {
-  const recipe = await getRecipeById(params.id);
+  const resolvedParams = await params;
+  const recipe = await getRecipeById(resolvedParams.id);
 
   if (!recipe) {
     notFound();
