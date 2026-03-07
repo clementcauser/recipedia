@@ -14,9 +14,11 @@ import { Utensils, Clock, ChefHat, Star } from "lucide-react";
 import Link from "next/link";
 import { DeleteRecipeButton } from "@/components/recipes/delete-recipe-button";
 import { FavoriteButton } from "@/components/recipes/favorite-button";
+import { RemoveFromBookButton } from "@/components/books/remove-from-book-button";
 
 interface RecipeCardProps {
   recipe: any; // Using any for brevity here, should ideally use a proper type from prisma
+  bookId?: string;
 }
 
 const difficultyLabels: Record<string, string> = {
@@ -25,7 +27,7 @@ const difficultyLabels: Record<string, string> = {
   HARD: "Difficile",
 };
 
-export function RecipeCard({ recipe }: RecipeCardProps) {
+export function RecipeCard({ recipe, bookId }: RecipeCardProps) {
   return (
     <Card className="overflow-hidden flex flex-col group relative">
       <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -97,7 +99,11 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
             <Link href={`/recipes/${recipe.id}/edit`}>Modifier</Link>
           </Button>
         </div>
-        <DeleteRecipeButton recipeId={recipe.id} recipeTitle={recipe.title} />
+        {bookId ? (
+          <RemoveFromBookButton bookId={bookId} recipeId={recipe.id} />
+        ) : (
+          <DeleteRecipeButton recipeId={recipe.id} recipeTitle={recipe.title} />
+        )}
       </CardFooter>
     </Card>
   );

@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Créer une application Next",
-  description: "Généré par create next app",
+  title: "Recipedia",
+  description: "Importez. Cuisinez. Savourez.",
 };
 
 export default async function RootLayout({

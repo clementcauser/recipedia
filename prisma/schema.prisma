@@ -22,6 +22,7 @@ model User {
   favorites     Favorite[]
   reviews       Review[]
   comments      Comment[]
+  books         Book[]
 
   @@unique([email])
   @@map("user")
@@ -99,6 +100,7 @@ model Recipe {
   favorites   Favorite[]
   reviews     Review[]
   comments    Comment[]
+  books       BookRecipe[]
 
   @@index([userId])
   @@index([slug])
@@ -226,4 +228,36 @@ enum Difficulty {
   EASY
   MEDIUM
   HARD
+}
+
+model Book {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  recipes BookRecipe[]
+
+  @@index([userId])
+  @@map("book")
+}
+
+model BookRecipe {
+  bookId String
+  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  addedAt DateTime @default(now())
+
+  @@id([bookId, recipeId])
+  @@index([bookId])
+  @@index([recipeId])
+  @@map("book_recipe")
 }

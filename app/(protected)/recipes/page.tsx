@@ -1,11 +1,12 @@
 import { getRecipes } from "@/app/actions/recipe.actions";
+import { getBooks } from "@/app/actions/book.actions";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { RecipeList } from "@/components/recipes/recipe-list";
+import { RecipesTabs } from "@/components/recipes/recipes-tabs";
 
 export default async function RecipesPage() {
-  const recipes = await getRecipes();
+  const [recipes, books] = await Promise.all([getRecipes(), getBooks()]);
 
   return (
     <div className="container py-10 px-6">
@@ -26,7 +27,7 @@ export default async function RecipesPage() {
         </div>
       </div>
 
-      <RecipeList initialRecipes={recipes} />
+      <RecipesTabs initialRecipes={recipes} initialBooks={books} />
     </div>
   );
 }

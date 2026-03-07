@@ -13,6 +13,7 @@ import {
   getTotalLikesForUser,
   getUserAverageRating,
 } from "./actions/recipe.actions";
+import { getTotalBooksForUser } from "./actions/book.actions";
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -50,6 +51,7 @@ export default async function Home() {
   const recipes = await getRecipes();
   const ratingStat = await getUserAverageRating();
   const totalLikes = await getTotalLikesForUser();
+  const totalBooks = await getTotalBooksForUser();
   const favoritedRecipes = await getFavoritedRecipes(4);
 
   // Greeting based on time
@@ -95,7 +97,7 @@ export default async function Home() {
               />
               <StatCard
                 label="Livres créés"
-                value="3"
+                value={totalBooks}
                 icon={BookOpen}
                 iconColor="text-blue-500"
                 bgColor="bg-blue-50 dark:bg-blue-950/20"

@@ -22,6 +22,7 @@ import { ShareDialog } from "./share-dialog";
 import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { FavoriteButton } from "./favorite-button";
+import { SaveToBookDialog } from "@/components/books/save-to-book-dialog";
 
 type Recipe = Omit<
   Prisma.RecipeGetPayload<{
@@ -60,12 +61,14 @@ interface RecipeContentProps {
   recipe: Recipe;
   initialComments: any[];
   totalComments: number;
+  books?: { id: string; title: string; isInBook: boolean }[];
 }
 
 export function RecipeContent({
   recipe,
   initialComments,
   totalComments,
+  books = [],
 }: RecipeContentProps) {
   const { data: session } = useSession();
   const router = useRouter();
@@ -135,6 +138,9 @@ export function RecipeContent({
               initialIsFavorited={recipe.isFavorited}
               className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/40 border-none"
             />
+            {books.length > 0 && (
+              <SaveToBookDialog recipeId={recipe.id} books={books} />
+            )}
             <FloatingHeaderButtons
               onShare={() => setIsShareDialogOpen(true)}
               isAuthor={isAuthor}
