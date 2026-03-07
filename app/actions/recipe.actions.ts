@@ -419,6 +419,61 @@ export async function getUserAverageRating() {
   };
 }
 
+export async function getTotalLikesForUser() {
+  const session = await getSession();
+  if (!session) return 0;
+
+  const totalLikes = await db.favorite.count({
+    where: {
+      recipe: {
+        userId: session.user.id,
+      },
+    },
+  });
+
+  return totalLikes;
+}
+
+export async function getFavoritedRecipes(limit: number = 4) {
+  const session = await getSession();
+  if (!session) return [];
+
+  const favorites = await db.favorite.findMany({
+    where: { userId: session.user.id },
+    include: {
+      recipe: {
+        include: {
+          user: { select: { displayName: true, firstName: true } },
+          categories: { include: { category: true } },
+          _count: { select: { reviews: true, comments: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+
+  const favoritedRecipesWithDetails = await Promise.all(
+    favorites.map(async (fav) => {
+      const recipe = fav.recipe;
+      const aggregate = await db.review.aggregate({
+        where: { recipeId: recipe.id },
+        _avg: { rating: true },
+      });
+
+      return {
+        ...recipe,
+        authorName: recipe.user.displayName || recipe.user.firstName,
+        averageRating: aggregate._avg.rating || 0,
+        reviewCount: recipe._count.reviews,
+        isFavorited: true, // by definition
+      };
+    }),
+  );
+
+  return favoritedRecipesWithDetails;
+}
+
 export async function getComments(recipeId: string) {
   const session = await getSession();
   if (!session) {

@@ -1,14 +1,18 @@
-import Link from "next/link";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { getRecipes } from "./actions/recipe.actions";
-import { StatCard } from "@/components/dashboard/stat-card";
+import { CommunityPickCard } from "@/components/dashboard/community-pick-card";
 import { QuickImportCard } from "@/components/dashboard/quick-import-card";
 import { RecipeCardHorizontal } from "@/components/dashboard/recipe-card-horizontal";
-import { CommunityPickCard } from "@/components/dashboard/community-pick-card";
-import { Soup, BookOpen, TrendingUp, UserCircle, Star } from "lucide-react";
+import { StatCard } from "@/components/dashboard/stat-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getUserAverageRating } from "./actions/recipe.actions";
+import { auth } from "@/lib/auth";
+import { BookOpen, HeartPlus, Soup, Star, UserCircle } from "lucide-react";
+import { headers } from "next/headers";
+import Link from "next/link";
+import {
+  getFavoritedRecipes,
+  getRecipes,
+  getTotalLikesForUser,
+  getUserAverageRating,
+} from "./actions/recipe.actions";
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -44,8 +48,9 @@ export default async function Home() {
   }
 
   const recipes = await getRecipes();
-  const recentRecipes = recipes.slice(0, 3);
   const ratingStat = await getUserAverageRating();
+  const totalLikes = await getTotalLikesForUser();
+  const favoritedRecipes = await getFavoritedRecipes(4);
 
   // Greeting based on time
   const hour = new Date().getHours();
@@ -82,7 +87,7 @@ export default async function Home() {
             {/* Stats (Inline for Mobile, Grid for Desktop) */}
             <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
-                label="Recettes cuisinées"
+                label="Recettes"
                 value={recipes.length}
                 icon={Soup}
                 iconColor="text-emerald-500"
@@ -96,9 +101,9 @@ export default async function Home() {
                 bgColor="bg-blue-50 dark:bg-blue-950/20"
               />
               <StatCard
-                label="Préférées"
-                value="12"
-                icon={TrendingUp}
+                label="Total de likes sur vos recettes"
+                value={totalLikes}
+                icon={HeartPlus}
                 iconColor="text-purple-500"
                 bgColor="bg-purple-50 dark:bg-purple-950/20"
               />
@@ -168,27 +173,29 @@ export default async function Home() {
                   Coups de cœur
                 </h2>
                 <Link
-                  href="/community"
+                  href="/recipes"
                   className="text-sm font-bold text-emerald-500 hover:text-emerald-600 transition-colors"
                 >
-                  Explorer
+                  Voir tout
                 </Link>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6">
-                <CommunityPickCard
-                  id="1"
-                  title="Curry Vert Thaï"
-                  author="ChefAnna"
-                  rating={4.9}
-                  image="https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?auto=format&fit=crop&w=800&q=80"
-                />
-                <CommunityPickCard
-                  id="2"
-                  title="Pancakes aux Myrtilles"
-                  author="MorningJoe"
-                  rating={4.7}
-                  image="https://images.unsplash.com/photo-1567620905732-2d1ec7bb7445?auto=format&fit=crop&w=800&q=80"
-                />
+                {favoritedRecipes.length > 0 ? (
+                  favoritedRecipes.map((recipe) => (
+                    <CommunityPickCard
+                      key={recipe.id}
+                      id={recipe.id}
+                      title={recipe.title}
+                      author={recipe.authorName || "Anonyme"}
+                      rating={recipe.averageRating}
+                      image={recipe.imageUrl || undefined}
+                    />
+                  ))
+                ) : (
+                  <div className="p-8 text-center border-2 border-dashed rounded-2xl text-muted-foreground">
+                    Aucun favori pour le moment.
+                  </div>
+                )}
               </div>
             </section>
           </aside>
