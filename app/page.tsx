@@ -51,7 +51,6 @@ export default async function Home() {
   const hour = new Date().getHours();
   let greeting = "Bonjour";
   if (hour >= 18) greeting = "Bonsoir";
-  if (hour >= 5 && hour < 12) greeting = "Bon matin";
 
   return (
     <div className="bg-zinc-50 dark:bg-zinc-950 min-h-screen pb-20 md:pb-10">

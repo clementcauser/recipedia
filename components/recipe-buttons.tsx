@@ -2,7 +2,20 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, MoreHorizontal, Share2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  ChevronLeft,
+  Edit2,
+  MessageSquare,
+  MoreHorizontal,
+  Share2,
+  Star,
+} from "lucide-react";
 import Link from "next/link";
 
 interface ActionButtonProps {
@@ -44,12 +57,18 @@ export function BackButton({ href }: { href: string }) {
 
 interface FloatingHeaderButtonsProps {
   onShare?: () => void;
-  onMore?: () => void;
+  onEdit?: () => void;
+  onRate?: () => void;
+  onComment?: () => void;
+  isAuthor?: boolean;
 }
 
 export function FloatingHeaderButtons({
   onShare,
-  onMore,
+  onEdit,
+  onRate,
+  onComment,
+  isAuthor,
 }: FloatingHeaderButtonsProps) {
   return (
     <div className="flex gap-4">
@@ -61,14 +80,47 @@ export function FloatingHeaderButtons({
       >
         <Share2 className="size-5" />
       </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-10 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40"
-        onClick={onMore}
-      >
-        <MoreHorizontal className="size-5" />
-      </Button>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-10 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40"
+          >
+            <MoreHorizontal className="size-5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          className="w-56 rounded-2xl p-2 border-none shadow-xl"
+        >
+          {isAuthor && (
+            <DropdownMenuItem
+              onClick={onEdit}
+              className="rounded-xl py-3 font-bold text-slate-700 focus:bg-primary/10 focus:text-primary cursor-pointer"
+            >
+              <Edit2 className="mr-3 size-4" />
+              Modifier la recette
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            onClick={onRate}
+            className="rounded-xl py-3 font-bold text-slate-700 focus:bg-primary/10 focus:text-primary cursor-pointer"
+          >
+            <Star className="mr-3 size-4" />
+            Donner une note
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={onComment}
+            className="rounded-xl py-3 font-bold text-slate-700 focus:bg-primary/10 focus:text-primary cursor-pointer"
+          >
+            <MessageSquare className="mr-3 size-4" />
+            Commenter
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

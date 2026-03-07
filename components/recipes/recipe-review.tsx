@@ -61,7 +61,7 @@ export function RecipeReview({ recipeId, initialReview }: RecipeReviewProps) {
       <div className="flex flex-col gap-6">
         <div>
           <h3 className="text-2xl font-black text-slate-800 mb-2">
-            Votre avis
+            Donnez votre avis
           </h3>
           <p className="text-slate-500 font-medium">
             Qu&apos;avez-vous pensé de cette recette ?

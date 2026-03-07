@@ -1,20 +1,13 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
+import { navItems } from "@/lib/navigation";
+import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight, LogOut, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { navItems } from "@/lib/navigation";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  LogOut,
-  Settings,
-  UserCircle,
-  ShieldCheck,
-} from "lucide-react";
-import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 
 export function Sidebar() {
@@ -43,7 +36,6 @@ export function Sidebar() {
         isCollapsed ? "w-20" : "w-64",
       )}
     >
-      {/* Header & Toggle */}
       <div
         className={cn(
           "p-6 flex items-center justify-between",
@@ -69,7 +61,7 @@ export function Sidebar() {
       </div>
 
       {/* Main Navigation */}
-      <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
+      <nav className="flex flex-col flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
         {mainNavItems.map((item) => {
           const isActive =
             pathname === item.href ||

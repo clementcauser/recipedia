@@ -49,7 +49,7 @@ export const auth = betterAuth({
   emailVerification: {
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
-    sendVerificationEmail: async ({ user, url, token }, request) => {
+    sendVerificationEmail: async ({ user, url }) => {
       if (resend) {
         await resend.emails.send({
           from: "Recipedia <onboarding@resend.dev>",

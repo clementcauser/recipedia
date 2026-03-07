@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import slugify from "slugify";
+import { extractRecipeData } from "@/lib/recipe-scraper";
 
 const ingredientSchema = z.object({
   name: z.string().min(1, "Nom de l'ingrédient requis"),
@@ -179,6 +180,45 @@ export async function deleteRecipe(id: string) {
   revalidatePath("/recipes");
 }
 
+export async function toggleFavorite(recipeId: string) {
+  const session = await getSession();
+  if (!session) {
+    throw new Error("Vous devez être connecté pour gérer vos favoris");
+  }
+
+  const userId = session.user.id;
+
+  const existingFavorite = await db.favorite.findUnique({
+    where: {
+      userId_recipeId: {
+        userId,
+        recipeId,
+      },
+    },
+  });
+
+  if (existingFavorite) {
+    await db.favorite.delete({
+      where: {
+        userId_recipeId: {
+          userId,
+          recipeId,
+        },
+      },
+    });
+  } else {
+    await db.favorite.create({
+      data: {
+        userId,
+        recipeId,
+      },
+    });
+  }
+
+  revalidatePath("/recipes");
+  revalidatePath(`/recipes/${recipeId}`);
+}
+
 export async function getRecipes() {
   const session = await getSession();
   if (!session) {
@@ -227,6 +267,11 @@ export async function getRecipes() {
         averageRating: aggregate._avg.rating || 0,
         reviewCount: recipe._count.reviews,
         commentCount: recipe._count.comments,
+        isFavorited: recipe.favorites.length > 0,
+        ingredients: recipe.ingredients.map((ing) => ({
+          ...ing,
+          quantity: ing.quantity?.toString() ?? null,
+        })),
       };
     }),
   );
@@ -267,6 +312,11 @@ export async function getRecipeById(id: string) {
       _count: {
         select: { reviews: true, comments: true },
       },
+      favorites: {
+        where: {
+          userId: session.user.id,
+        },
+      },
     },
   });
 
@@ -296,6 +346,7 @@ export async function getRecipeById(id: string) {
     averageRating: aggregate._avg.rating || 0,
     reviewCount: recipe._count.reviews,
     commentCount: recipe._count.comments,
+    isFavorited: recipe.favorites.length > 0,
   };
 }
 
@@ -452,4 +503,25 @@ export async function createComment(data: {
 
   revalidatePath(`/recipes/${data.recipeId}`);
   return comment;
+}
+
+export async function extractRecipeFromUrlAction(url: string) {
+  const session = await getSession();
+  if (!session) {
+    throw new Error(
+      "Vous devez être connecté pour utiliser cette fonctionnalité",
+    );
+  }
+
+  const parsedUrl = z.string().url().safeParse(url);
+  if (!parsedUrl.success) {
+    throw new Error("URL invalide");
+  }
+
+  const result = await extractRecipeData(parsedUrl.data);
+  if (!result) {
+    throw new Error("Impossible d'extraire les données de cette recette");
+  }
+
+  return result;
 }

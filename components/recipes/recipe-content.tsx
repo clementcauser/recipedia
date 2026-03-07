@@ -18,6 +18,10 @@ import {
 import { useState } from "react";
 import { RecipeReview } from "./recipe-review";
 import { CommentSection } from "./comment-section";
+import { ShareDialog } from "./share-dialog";
+import { useSession } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { FavoriteButton } from "./favorite-button";
 
 type Recipe = Omit<
   Prisma.RecipeGetPayload<{
@@ -49,6 +53,7 @@ type Recipe = Omit<
   averageRating: number;
   reviewCount: number;
   commentCount: number;
+  isFavorited: boolean;
 };
 
 interface RecipeContentProps {
@@ -62,10 +67,14 @@ export function RecipeContent({
   initialComments,
   totalComments,
 }: RecipeContentProps) {
+  const { data: session } = useSession();
+  const router = useRouter();
   const [servings, setServings] = useState(recipe.servings ?? 1);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(
     new Set(),
   );
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+
   const initialServings = recipe.servings ?? 1;
   const ratio = servings / initialServings;
 
@@ -91,6 +100,15 @@ export function RecipeContent({
     });
   };
 
+  const isAuthor = session?.user?.id === recipe.userId;
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <div className="relative h-[45vh] w-full overflow-hidden">
@@ -111,7 +129,20 @@ export function RecipeContent({
         <div className="absolute top-6 left-6 flex items-center gap-4 w-[calc(100%-48px)] justify-between z-10">
           <BackButton href="/recipes" />
           <h1 className="text-white font-bold text-lg">Recipedia</h1>
-          <FloatingHeaderButtons />
+          <div className="flex items-center gap-2">
+            <FavoriteButton
+              recipeId={recipe.id}
+              initialIsFavorited={recipe.isFavorited}
+              className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/40 border-none"
+            />
+            <FloatingHeaderButtons
+              onShare={() => setIsShareDialogOpen(true)}
+              isAuthor={isAuthor}
+              onEdit={() => router.push(`/recipes/${recipe.id}/edit`)}
+              onRate={() => scrollToSection("recipe-rating")}
+              onComment={() => scrollToSection("recipe-comments")}
+            />
+          </div>
         </div>
 
         <div className="absolute bottom-10 left-6 right-6 z-10">
@@ -119,18 +150,28 @@ export function RecipeContent({
             {recipe.title}
           </h2>
           <div className="flex items-center gap-4 text-white/90 text-sm">
-            <div className="flex items-center gap-1.5">
-              <Star className="size-4 fill-yellow-400 text-yellow-400" />
+            <button
+              onClick={() => scrollToSection("recipe-rating")}
+              className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer group/stat"
+            >
+              <Star className="size-4 fill-yellow-400 text-yellow-400 group-hover/stat:scale-110 transition-transform" />
               <span className="font-bold">
                 {recipe.averageRating.toFixed(1)}
               </span>
-              <span className="text-white/60">({recipe.reviewCount} avis)</span>
-            </div>
-            <div className="flex items-center gap-1.5 ml-1 pl-4 border-l border-white/20">
-              <MessageSquare className="size-4 text-white/80" />
+              <span className="text-white/60 group-hover/stat:text-white/80 transition-colors">
+                ({recipe.reviewCount} avis)
+              </span>
+            </button>
+            <button
+              onClick={() => scrollToSection("recipe-comments")}
+              className="flex items-center gap-1.5 ml-1 pl-4 border-l border-white/20 hover:text-white transition-colors cursor-pointer group/stat"
+            >
+              <MessageSquare className="size-4 text-white/80 group-hover/stat:scale-110 transition-transform group-hover/stat:text-white" />
               <span className="font-bold">{recipe.commentCount}</span>
-              <span className="text-white/60">commentaires</span>
-            </div>
+              <span className="text-white/60 group-hover/stat:text-white/80 transition-colors">
+                commentaires
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -261,15 +302,25 @@ export function RecipeContent({
           </div>
         </section>
         {recipe.isPublic && (
-          <RecipeReview
-            recipeId={recipe.id}
-            initialReview={recipe.userReview}
-          />
+          <div id="recipe-rating">
+            <RecipeReview
+              recipeId={recipe.id}
+              initialReview={recipe.userReview}
+            />
+          </div>
         )}
-        <CommentSection
-          recipeId={recipe.id}
-          comments={initialComments}
-          totalCount={totalComments}
+        <div id="recipe-comments">
+          <CommentSection
+            recipeId={recipe.id}
+            comments={initialComments}
+            totalCount={totalComments}
+          />
+        </div>
+        <ShareDialog
+          isOpen={isShareDialogOpen}
+          onClose={() => setIsShareDialogOpen(false)}
+          recipeTitle={recipe.title}
+          recipeUrl={typeof window !== "undefined" ? window.location.href : ""}
         />
       </div>
     </div>
